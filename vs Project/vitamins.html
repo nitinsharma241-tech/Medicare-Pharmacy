@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vitamins & Supplements — Shop</title>
+
+  <!-- SAME CSS AS PAIN RELIEF -->
+  <style>
+    :root{
+      --accent:#2563eb;
+      --muted:#6b7280;
+      --card-bg:#ffffff;
+      --bg:#f3f4f6;
+      --success:#16a34a;
+      --danger:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, Arial, sans-serif;
+      background:var(--bg);
+      color:#111827;
+    }
+
+    .navbar{
+      background:linear-gradient(90deg,#14b8a6,#2563eb);
+      color:white;
+      padding:12px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:8px;background:#fff3;
+      display:flex;align-items:center;justify-content:center;font-weight:700;}
+    .search{padding:6px 10px;border-radius:8px;border:none;min-width:260px;}
+    .cart-btn{background:rgba(255,255,255,0.12);color:white;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;position:relative;}
+    .cart-badge{position:absolute;top:-6px;right:-6px;background:var(--danger);color:white;padding:2px 6px;border-radius:999px;font-size:12px;}
+    
+    .container{max-width:1100px;margin:22px auto;padding:0 14px}
+    .grid{display:grid;grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));gap:14px;}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .select, .btn{padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb;background:white;}
+    .btn{background:var(--accent);color:white;border:none;cursor:pointer}
+
+    .card{background:var(--card-bg);border-radius:10px;padding:12px;
+      box-shadow:0 6px 18px rgba(16,24,40,0.06);display:flex;flex-direction:column;gap:8px;
+      transition:transform .12s ease;}
+    .card:hover{transform:translateY(-6px);}
+    .thumb{width:100%;height:140px;border-radius:8px;object-fit:cover;background:#f1f5f9}
+    .price{color:var(--danger);font-weight:700}
+    .card-actions{display:flex;gap:8px;margin-top:auto}
+    .small{padding:6px 8px;font-size:13px;border-radius:8px;border:1px solid #e5e7eb;background:white}
+    .add{background:var(--accent);color:white;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+
+    /* CART DRAWER */
+    .cart-drawer{
+      position:fixed;right:0;top:0;height:100vh;width:360px;background:white;
+      box-shadow:-10px 0 30px rgba(2,6,23,0.2);transform:translateX(110%);transition:transform .25s ease;
+      display:flex;flex-direction:column;z-index:80;}
+    .cart-drawer.open{transform:translateX(0)}
+    .cart-head,.cart-footer{padding:16px;border-bottom:1px solid #eee}
+    .cart-body{padding:16px;overflow:auto;flex:1}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed #eee}
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="logo">VS</div>
+      <div>
+        <h1 style="margin:0;font-size:18px">Medicare Pharmacy</h1>
+        <div style="font-size:12px;color:#fff9">Vitamins & Supplements</div>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <input id="searchInput" class="search" placeholder="Search vitamins..." />
+      <button class="cart-btn" id="openCartBtn">Cart <span id="cartCount" class="cart-badge">0</span></button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="container">
+    <div class="controls">
+      <h2>Vitamins & Supplements — 20 Items</h2>
+      <select id="sortSelect" class="select">
+        <option value="relevance">Sort: Relevance</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+      </select>
+    </div>
+
+    <section class="grid" id="productsGrid"></section>
+  </main>
+
+  <!-- CART DRAWER -->
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-head">
+      <strong>Your Cart</strong>
+      <button id="closeCart" style="background:none;border:0;cursor:pointer">✕</button>
+    </div>
+    <div class="cart-body" id="cartBody"></div>
+    <div class="cart-footer">
+      <div style="display:flex;justify-content:space-between;font-weight:700">
+        <span>Total</span><span id="cartSubtotal">₹0.00</span>
+      </div>
+      <button class="btn" style="width:100%;margin-top:10px" id="bookNowBtn">Book Now</button>
+    </div>
+  </aside>
+
+<script>
+const products = [
+  {id:1,name:"Vitamin C 500mg",price:120,img:"https://images.unsplash.com/photo-1587370560942-ad2a04eabb6d?w=500"},
+  {id:2,name:"Vitamin D3 60k",price:150,img:"https://images.unsplash.com/photo-1597072689227-888f93be8cbe?w=500"},
+  {id:3,name:"Multivitamin A-Z",price:180,img:"https://images.unsplash.com/photo-1600170311831-cd1d57c94e39?w=500"},
+  {id:4,name:"B-Complex Tablets",price:90,img:"https://images.unsplash.com/photo-1596040033226-28a6c399b969?w=500"},
+  {id:5,name:"Calcium + D3",price:200,img:"https://images.unsplash.com/photo-1558615906-1f298ecd27cc?w=500"},
+  {id:6,name:"Omega-3 Fish Oil",price:300,img:"https://images.unsplash.com/photo-1587370560628-438cdded0143?w=500"},
+  {id:7,name:"Iron Folic Acid",price:130,img:"https://images.unsplash.com/photo-1587339144364-5b73fbb55f66?w=500"},
+  {id:8,name:"Zinc Tablets",price:60,img:"https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=500"},
+  {id:9,name:"Vitamin E Softgel",price:110,img:"https://images.unsplash.com/photo-1587982125284-78426182fd9c?w=500"},
+  {id:10,name:"Prenatal Vitamins",price:220,img:"https://images.unsplash.com/photo-1611171711914-5bdeb5590ce3?w=500"},
+  {id:11,name:"Energy Booster B12",price:130,img:"https://images.unsplash.com/photo-1565068480-897a6651da94?w=500"},
+  {id:12,name:"Vitamin K2",price:160,img:"https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500"},
+  {id:13,name:"Immunity Gummies",price:190,img:"https://images.unsplash.com/photo-1597284097743-f88fc79f3a12?w=500"},
+  {id:14,name:"Hair Skin Nails",price:250,img:"https://images.unsplash.com/photo-1622219772629-b3886b4c2e7e?w=500"},
+  {id:15,name:"Vitamin A Capsules",price:100,img:"https://images.unsplash.com/photo-1605236453806-6c4b9aab0759?w=500"},
+  {id:16,name:"Kids Multivitamin",price:170,img:"https://images.unsplash.com/photo-1611173223571-21e0abf543e7?w=500"},
+  {id:17,name:"Mineral Boost",price:140,img:"https://images.unsplash.com/photo-1612536107244-504cbcb882a6?w=500"},
+  {id:18,name:"Digestion Probiotic",price:260,img:"https://images.unsplash.com/photo-1610889503177-fb4bcb216a45?w=500"},
+  {id:19,name:"Vitamin B6",price:95,img:"https://images.unsplash.com/photo-1622320522741-19f2a977b95b?w=500"},
+  {id:20,name:"Joint Support",price:280,img:"https://images.unsplash.com/photo-1612536107222-ee375c8578bb?w=500"},
+];
+
+let cart = JSON.parse(localStorage.getItem('vitCart')||'[]');
+
+function render(){
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML='';
+  products.forEach(p=>{
+    grid.innerHTML += `
+      <div class="card">
+        <img class="thumb" src="${p.img}">
+        <h4>${p.name}</h4>
+        <div class="price">₹${p.price}</div>
+        <div class="card-actions">
+          <button class="small" onclick="view(${p.id})">View</button>
+          <button class="add" onclick="add(${p.id})">Add to Cart</button>
+        </div>
+      </div>`;
+  });
+}
+function add(id){
+  const f = cart.find(i=>i.id===id);
+  f?f.qty++:cart.push({id,qty:1});
+  save(); updateCartUI();
+}
+function save(){ localStorage.setItem('vitCart', JSON.stringify(cart)); }
+function view(id){
+  const p = products.find(x=>x.id===id);
+  alert(p.name+" - ₹"+p.price);
+}
+
+function updateCartUI(){
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('cartCount').innerText = count;
+  const body = document.getElementById('cartBody');
+  body.innerHTML='';
+  let tot = 0;
+  cart.forEach(c=>{
+    const p = products.find(x=>x.id===c.id);
+    const t = p.price*c.qty; tot+=t;
+    body.innerHTML+=`
+      <div class="cart-item">
+        <img class="c-thumb" src="${p.img}">
+        <div style="flex:1">${p.name}<br>
+          <small>₹${p.price} × ${c.qty} = ₹${t}</small></div>
+        <button onclick="rem(${p.id})">❌</button>
+      </div>`;
+  });
+  document.getElementById('cartSubtotal').innerText = "₹"+tot;
+}
+
+function rem(id){ cart = cart.filter(i=>i.id!==id); save(); updateCartUI(); }
+document.getElementById('openCartBtn').onclick=()=>{document.getElementById('cartDrawer').classList.add('open');}
+document.getElementById('closeCart').onclick=()=>{document.getElementById('cartDrawer').classList.remove('open');}
+
+render(); updateCartUI();
+</script>
+
+</body>
+</html>

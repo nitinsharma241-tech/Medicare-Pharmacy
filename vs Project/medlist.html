@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pharmacy Catalog - Pain Relief • Vitamins • Cold & Cough • Diabetes Care</title>
+  <!-- Tailwind CDN for quick styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Small custom styles */
+    .card { transition: transform .12s ease, box-shadow .12s ease; }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgba(0,0,0,.08); }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <header class="bg-white shadow-sm sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-md bg-indigo-600 text-white flex items-center justify-center font-bold">PH</div>
+        <div>
+          <h1 class="text-lg font-semibold">Pharmacy Catalog</h1>
+          <p class="text-sm text-gray-500">Pain Relief • Vitamins & Supplements • Cold & Cough • Diabetes Care</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <input id="searchInput" class="border rounded px-3 py-2 text-sm w-64" placeholder="Search product or ingredient...">
+        <button id="cartBtn" class="relative bg-indigo-600 text-white px-3 py-2 rounded shadow-sm">Cart <span id="cartCount" class="ml-2 inline-block bg-white text-indigo-600 rounded-full px-2 py-0 text-xs">0</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Category tabs -->
+    <nav class="mb-6">
+      <ul id="categories" class="flex gap-3 flex-wrap">
+        <!-- dynamically filled -->
+      </ul>
+    </nav>
+
+    <!-- Filters and sort -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <label class="text-sm text-gray-600">Filter by: </label>
+        <select id="filterSelect" class="border rounded px-2 py-1 text-sm">
+          <option value="all">All</option>
+          <option value="tablet">Tablet</option>
+          <option value="syrup">Syrup</option>
+          <option value="capsule">Capsule</option>
+          <option value="ointment">Ointment</option>
+        </select>
+      </div>
+
+      <div>
+        <select id="sortSelect" class="border rounded px-2 py-1 text-sm">
+          <option value="relevance">Sort: Relevance</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Products grid -->
+    <section id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- dynamically filled -->
+    </section>
+
+  </main>
+
+  <!-- Cart drawer -->
+  <aside id="cartDrawer" class="fixed right-0 top-0 h-full w-96 bg-white shadow-lg transform translate-x-full transition-transform z-30">
+    <div class="p-4 border-b flex items-center justify-between">
+      <h3 class="font-semibold">Your Cart</h3>
+      <button id="closeCart" class="text-gray-500">Close</button>
+    </div>
+    <div id="cartItems" class="p-4 space-y-3 overflow-auto h-[70vh]"></div>
+    <div class="p-4 border-t">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm text-gray-600">Subtotal</div>
+        <div id="cartSubtotal" class="font-semibold">₹0</div>
+      </div>
+      <button id="checkoutBtn" class="w-full bg-indigo-600 text-white py-2 rounded">Checkout</button>
+    </div>
+  </aside>
+
+  <!-- Product modal -->
+  <div id="modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-40">
+    <div class="bg-white rounded-lg w-11/12 md:w-3/4 lg:w-1/2 p-6">
+      <button id="modalClose" class="float-right text-gray-500">✕</button>
+      <div id="modalContent" class="mt-2"></div>
+    </div>
+  </div>
+
+  <footer class="mt-12 py-6 text-center text-sm text-gray-500">
+    © 2025 Pharmacy Catalog — For demo only. Product info is sample data.
+  </footer>
+
+  <script>
+    // Sample product database (a starter set). Fields: id, name, category, form, price, desc
+    const products = [
+      // Pain Relief
+      {id:1, name:'Paracetamol 500mg', category:'Pain Relief', form:'tablet', price:40, desc:'Pain reliever and fever reducer. 10 tablets pack.'},
+{id:2, name:'Ibuprofen 200mg', category:'Pain Relief', form:'tablet', price:55, desc:'Anti-inflammatory pain relief. 10 tablets pack.'},
+{id:3, name:'Diclofenac Gel 1%', category:'Pain Relief', form:'ointment', price:120, desc:'Topical gel for localized pain.'},
+{id:4, name:'Aspirin 300mg', category:'Pain Relief', form:'tablet', price:45, desc:'Reduces pain, fever, and inflammation.'},
+{id:5, name:'Naproxen 250mg', category:'Pain Relief', form:'tablet', price:65, desc:'Used for joint pain and inflammation.'},
+{id:6, name:'Aceclofenac 100mg', category:'Pain Relief', form:'tablet', price:70, desc:'Relieves pain in arthritis and muscle pain.'},
+{id:7, name:'Ketorolac 10mg', category:'Pain Relief', form:'tablet', price:95, desc:'Short-term treatment for moderate pain.'},
+{id:8, name:'Tramadol 50mg', category:'Pain Relief', form:'tablet', price:110, desc:'Prescription pain reliever for severe pain.'},
+{id:9, name:'Lornoxicam 8mg', category:'Pain Relief', form:'tablet', price:120, desc:'Used for pain and inflammation relief.'},
+{id:10, name:'Diclofenac Sodium Injection', category:'Pain Relief', form:'injection', price:85, desc:'Injection for immediate pain relief.'},
+{id:11, name:'Pain Relief Balm', category:'Pain Relief', form:'ointment', price:60, desc:'Topical balm for headache and muscle pain.'},
+{id:12, name:'Moov Pain Relief Spray 50ml', category:'Pain Relief', form:'spray', price:160, desc:'Quick relief spray for back and muscle pain.'},
+{id:13, name:'Volini Gel 30g', category:'Pain Relief', form:'ointment', price:140, desc:'Fast relief for joint and back pain.'},
+{id:14, name:'Dolo 650', category:'Pain Relief', form:'tablet', price:35, desc:'Pain and fever reducer.'},
+{id:15, name:'Combiflam Tablet', category:'Pain Relief', form:'tablet', price:50, desc:'Pain and fever relief combination tablet.'},
+{id:16, name:'Saridon Tablet', category:'Pain Relief', form:'tablet', price:30, desc:'For headache and body pain relief.'},
+{id:17, name:'Calpol Suspension 250mg/5ml', category:'Pain Relief', form:'syrup', price:55, desc:'Paracetamol syrup for pain and fever (kids).'},
+{id:18, name:'Ibugesic Plus', category:'Pain Relief', form:'tablet', price:60, desc:'Pain relief and fever reduction.'},
+{id:19, name:'Crocin Advance', category:'Pain Relief', form:'tablet', price:35, desc:'Pain reliever and fever reducer.'},
+{id:20, name:'Zerodol SP', category:'Pain Relief', form:'tablet', price:85, desc:'Relieves pain and swelling in joints.'},
+{id:21, name:'Brufen 400mg', category:'Pain Relief', form:'tablet', price:70, desc:'Used to treat mild to moderate pain.'},
+{id:22, name:'Flexura D', category:'Pain Relief', form:'tablet', price:140, desc:'Relieves muscle spasms and pain.'},
+{id:23, name:'Myospaz Tablet', category:'Pain Relief', form:'tablet', price:120, desc:'For muscular pain and stiffness relief.'},
+{id:24, name:'Cyclopam Tablet', category:'Pain Relief', form:'tablet', price:55, desc:'Used for stomach cramps and pain relief.'},
+{id:25, name:'Pain Relief Patch', category:'Pain Relief', form:'patch', price:150, desc:'Transdermal patch for localized pain.'},
+{id:26, name:'Nise Gel 30g', category:'Pain Relief', form:'ointment', price:130, desc:'Relieves muscle and joint pain.'},
+{id:27, name:'Zandu Balm Ultra', category:'Pain Relief', form:'ointment', price:65, desc:'Quick headache and body ache relief.'},
+{id:28, name:'Relispray 35g', category:'Pain Relief', form:'spray', price:110, desc:'Fast-acting pain relief spray.'},
+{id:29, name:'Amrutanjan Pain Balm', category:'Pain Relief', form:'ointment', price:50, desc:'Headache and cold-related pain relief.'},
+{id:30, name:'Voveran Emulgel', category:'Pain Relief', form:'ointment', price:150, desc:'Relieves back, joint, and muscle pain.'},
+{id:31, name:'Mentho Plus Balm', category:'Pain Relief', form:'ointment', price:45, desc:'Cooling balm for pain and headache.'},
+{id:32, name:'Himalaya Pain Relief Oil 100ml', category:'Pain Relief', form:'oil', price:180, desc:'Ayurvedic oil for joint and back pain.'},
+{id:33, name:'Dr. Ortho Oil 60ml', category:'Pain Relief', form:'oil', price:190, desc:'Ayurvedic oil for muscle and joint pain.'},
+{id:34, name:'Tiger Balm Red', category:'Pain Relief', form:'ointment', price:120, desc:'Popular balm for pain and muscle relief.'},
+{id:35, name:'Bengay Pain Relief Cream', category:'Pain Relief', form:'ointment', price:180, desc:'Cooling cream for joint and muscle pain.'},
+{id:36, name:'Himalaya Rumalaya Gel', category:'Pain Relief', form:'ointment', price:130, desc:'Herbal gel for back and knee pain relief.'},
+{id:37, name:'Fast Relief Spray', category:'Pain Relief', form:'spray', price:125, desc:'Instant relief from back and shoulder pain.'},
+{id:38, name:'Omnigel 30g', category:'Pain Relief', form:'ointment', price:135, desc:'Pain relief for muscles and joints.'},
+{id:39, name:'Moov Strong Pain Relief Cream', category:'Pain Relief', form:'ointment', price:175, desc:'Advanced cream for fast pain relief.'},
+{id:40, name:'Dard Mukti Oil', category:'Pain Relief', form:'oil', price:160, desc:'Ayurvedic herbal oil for pain-free joints.'},
+{id:41, name:'Rantac Gel', category:'Pain Relief', form:'ointment', price:95, desc:'Topical gel for local pain and soreness.'},
+{id:42, name:'Naprosyn 500mg', category:'Pain Relief', form:'tablet', price:95, desc:'Used for chronic pain and inflammation.'},
+{id:43, name:'Etoshine 90mg', category:'Pain Relief', form:'tablet', price:150, desc:'Used for arthritis and back pain.'},
+{id:44, name:'Ultracet Tablet', category:'Pain Relief', form:'tablet', price:130, desc:'Combination pain relief tablet.'},
+{id:45, name:'Dynapar QPS Spray', category:'Pain Relief', form:'spray', price:180, desc:'Quick pain relief topical spray.'},
+{id:46, name:'Diclowin Plus', category:'Pain Relief', form:'tablet', price:80, desc:'Pain relief with muscle relaxant.'},
+{id:47, name:'Pain-X Oil', category:'Pain Relief', form:'oil', price:145, desc:'Effective ayurvedic oil for joint pain.'},
+{id:48, name:'Relaxyl Gel', category:'Pain Relief', form:'ointment', price:125, desc:'Pain relief gel for muscles and joints.'},
+{id:49, name:'T-Relief Homeopathic Cream', category:'Pain Relief', form:'ointment', price:210, desc:'Natural relief for body pain and swelling.'},
+{id:50, name:'Volitra Gel', category:'Pain Relief', form:'ointment', price:170, desc:'For joint, back, and muscle pain relief.'},
+{id:51, name:'Thermoflam Tablet', category:'Pain Relief', form:'tablet', price:95, desc:'Pain relief and inflammation control.'},
+{id:52, name:'Zerodol MR', category:'Pain Relief', form:'tablet', price:115, desc:'For muscle pain and stiffness relief.'},
+{id:53, name:'Flexura DS', category:'Pain Relief', form:'tablet', price:130, desc:'Pain relief and muscle relaxation.'},
+{id:54, name:'Iodex Ultra Gel', category:'Pain Relief', form:'ointment', price:145, desc:'Fast-acting gel for pain and swelling.'},
+{id:55, name:'Combiflam Plus', category:'Pain Relief', form:'tablet', price:75, desc:'Effective for headache and muscle pain.'},
+{id:56, name:'Crocin Pain Relief Spray', category:'Pain Relief', form:'spray', price:165, desc:'Quick pain relief for muscle soreness.'},
+{id:57, name:'Moov Ayurvedic Cream', category:'Pain Relief', form:'ointment', price:155, desc:'Ayurvedic pain cream for everyday relief.'},
+{id:58, name:'Volini Maxx Spray', category:'Pain Relief', form:'spray', price:190, desc:'Powerful pain relief spray for back and knee pain.'},
+{id:59, name:'Zandu Ortho Vedic Oil', category:'Pain Relief', form:'oil', price:220, desc:'Herbal oil for arthritis and joint pain.'},
+{id:60, name:'Diclomax Gel', category:'Pain Relief', form:'ointment', price:140, desc:'For muscle, back, and shoulder pain relief.'},
+{id:401, name:'Zerodol P Syrup', category:'Pain Relief', form:'syrup', price:95, desc:'Relieves mild to moderate pain and inflammation.'},
+{id:402, name:'Flexura D Syrup', category:'Pain Relief', form:'syrup', price:110, desc:'Used for muscle pain and spasms.'},
+{id:403, name:'Diclomol Suspension', category:'Pain Relief', form:'syrup', price:85, desc:'Pain relief and fever reduction for adults and children.'},
+{id:404, name:'Flexura DS Syrup', category:'Pain Relief', form:'syrup', price:120, desc:'Pain relief for musculoskeletal conditions.'},
+{id:405, name:'Ibugesic Plus Suspension', category:'Pain Relief', form:'syrup', price:75, desc:'Combination of ibuprofen and paracetamol for pain and fever.'},
+{id:406, name:'Zerodol MR Syrup', category:'Pain Relief', form:'syrup', price:130, desc:'Used in muscle stiffness and joint pain.'},
+{id:407, name:'Crocin Pain Relief Suspension', category:'Pain Relief', form:'syrup', price:70, desc:'Fast-acting paracetamol syrup for pain and fever.'},
+{id:408, name:'Combiflam Suspension', category:'Pain Relief', form:'syrup', price:90, desc:'Pain reliever and anti-inflammatory syrup.'},
+
+
+      // Vitamins & Supplements
+{id:101, name:'Multivitamin Adult', category:'Vitamins & Supplements', form:'capsule', price:299, desc:'Daily multivitamin to support general health.'},
+{id:102, name:'Vitamin D3 2000 IU', category:'Vitamins & Supplements', form:'capsule', price:199, desc:'Supports bone health and immunity.'},
+{id:103, name:'Omega-3 Fish Oil', category:'Vitamins & Supplements', form:'capsule', price:399, desc:'Supports heart and brain health.'},
+{id:104, name:'Vitamin C Chewable Tablets', category:'Vitamins & Supplements', form:'tablet', price:150, desc:'Boosts immunity and skin health.'},
+{id:105, name:'Calcium + Vitamin D3', category:'Vitamins & Supplements', form:'tablet', price:250, desc:'Supports strong bones and teeth.'},
+{id:106, name:'B-Complex Forte', category:'Vitamins & Supplements', form:'tablet', price:180, desc:'Supports energy and nerve function.'},
+{id:107, name:'Zincovit Multivitamin', category:'Vitamins & Supplements', form:'tablet', price:120, desc:'Enhances immunity and metabolism.'},
+{id:108, name:'Revital H Men', category:'Vitamins & Supplements', form:'capsule', price:350, desc:'Daily energy and stamina booster.'},
+{id:109, name:'Revital H Women', category:'Vitamins & Supplements', form:'capsule', price:360, desc:'Formulated for women’s vitality.'},
+{id:110, name:'Supradyn Daily', category:'Vitamins & Supplements', form:'tablet', price:210, desc:'Improves energy and overall health.'},
+{id:111, name:'HealthKart Multivitamin', category:'Vitamins & Supplements', form:'tablet', price:290, desc:'Daily nutritional supplement for men and women.'},
+{id:112, name:'Shelcal 500', category:'Vitamins & Supplements', form:'tablet', price:190, desc:'Calcium supplement for bone strength.'},
+{id:113, name:'Neurobion Forte', category:'Vitamins & Supplements', form:'tablet', price:95, desc:'Vitamin B supplement for nerve health.'},
+{id:114, name:'Becozym C Forte', category:'Vitamins & Supplements', form:'tablet', price:120, desc:'B-complex vitamins with Vitamin C.'},
+{id:115, name:'Iron + Folic Acid', category:'Vitamins & Supplements', form:'tablet', price:100, desc:'Supports red blood cell production.'},
+{id:116, name:'Protinex Original 250g', category:'Vitamins & Supplements', form:'powder', price:450, desc:'Protein supplement with essential nutrients.'},
+{id:117, name:'Horlicks Women Plus', category:'Vitamins & Supplements', form:'powder', price:430, desc:'Supports bone health and energy in women.'},
+{id:118, name:'Ensure Diabetes Care', category:'Vitamins & Supplements', form:'powder', price:650, desc:'Balanced nutrition for diabetic adults.'},
+{id:119, name:'Glucon-D Tangy Orange', category:'Vitamins & Supplements', form:'powder', price:220, desc:'Instant energy drink enriched with Vitamin D.'},
+{id:120, name:'MuscleBlaze Whey Protein 1kg', category:'Vitamins & Supplements', form:'powder', price:1999, desc:'High-quality protein for muscle recovery.'},
+{id:121, name:'Fast&Up Charge Vitamin C', category:'Vitamins & Supplements', form:'tablet', price:450, desc:'Effervescent Vitamin C tablets for immunity.'},
+{id:122, name:'Nutrilite Daily', category:'Vitamins & Supplements', form:'tablet', price:1200, desc:'Comprehensive multivitamin for daily use.'},
+{id:123, name:'Amway Omega-3', category:'Vitamins & Supplements', form:'capsule', price:999, desc:'Supports heart and brain health.'},
+{id:124, name:'Himalaya Septilin', category:'Vitamins & Supplements', form:'tablet', price:180, desc:'Enhances immunity and fights infections.'},
+{id:125, name:'Himalaya Liv.52', category:'Vitamins & Supplements', form:'tablet', price:130, desc:'Supports liver health and metabolism.'},
+{id:126, name:'Wellman Multivitamin', category:'Vitamins & Supplements', form:'tablet', price:550, desc:'Advanced formula for men’s wellness.'},
+{id:127, name:'Wellwoman Multivitamin', category:'Vitamins & Supplements', form:'tablet', price:570, desc:'Complete vitamin supplement for women.'},
+{id:128, name:'Centrum Silver 50+', category:'Vitamins & Supplements', form:'tablet', price:680, desc:'Supports healthy aging in adults 50+.'},
+{id:129, name:'Shelcal HD', category:'Vitamins & Supplements', form:'tablet', price:210, desc:'High-dose calcium and Vitamin D3 supplement.'},
+{id:130, name:'Vitamin E 400 IU', category:'Vitamins & Supplements', form:'capsule', price:170, desc:'Antioxidant for skin and hair health.'},
+{id:131, name:'Evion 400', category:'Vitamins & Supplements', form:'capsule', price:120, desc:'Vitamin E supplement for glowing skin.'},
+{id:132, name:'Nutrilite Kids Multivitamin', category:'Vitamins & Supplements', form:'chewable', price:850, desc:'Multivitamin for children’s growth.'},
+{id:133, name:'Vitamin B12 1000mcg', category:'Vitamins & Supplements', form:'tablet', price:280, desc:'Supports nerve and red blood cell health.'},
+{id:134, name:'Vitamin A Softgel', category:'Vitamins & Supplements', form:'capsule', price:190, desc:'Essential for vision and skin health.'},
+{id:135, name:'Calcirol Sachet 1gm', category:'Vitamins & Supplements', form:'powder', price:70, desc:'Vitamin D3 supplement sachet for bone health.'},
+{id:136, name:'Chyawanprash 1kg', category:'Vitamins & Supplements', form:'paste', price:350, desc:'Ayurvedic immunity booster for all ages.'},
+{id:137, name:'Ashwagandha Capsules', category:'Vitamins & Supplements', form:'capsule', price:280, desc:'Improves energy and reduces stress.'},
+{id:138, name:'Shilajit Capsules', category:'Vitamins & Supplements', form:'capsule', price:320, desc:'Natural strength and stamina booster.'},
+{id:139, name:'Spirulina 500mg', category:'Vitamins & Supplements', form:'tablet', price:260, desc:'Superfood for energy and detoxification.'},
+{id:140, name:'Biotin 10,000 mcg', category:'Vitamins & Supplements', form:'tablet', price:380, desc:'Promotes healthy hair, nails, and skin.'},
+{id:141, name:'Collagen Builder', category:'Vitamins & Supplements', form:'powder', price:799, desc:'Supports skin elasticity and joint health.'},
+{id:142, name:'Himalaya Wellness Pure Herbs Amla', category:'Vitamins & Supplements', form:'tablet', price:160, desc:'Rich source of Vitamin C for immunity.'},
+{id:143, name:'Apple Cider Vinegar Tablets', category:'Vitamins & Supplements', form:'tablet', price:490, desc:'Helps detox and manage weight.'},
+{id:144, name:'Herbalife Formula 1 Shake', category:'Vitamins & Supplements', form:'powder', price:1150, desc:'Meal replacement with essential nutrients.'},
+{id:145, name:'MuscleXP Multivitamin for Men', category:'Vitamins & Supplements', form:'tablet', price:499, desc:'Advanced multivitamin for active men.'},
+{id:146, name:'GNC Mega Men Sport', category:'Vitamins & Supplements', form:'capsule', price:1250, desc:'Performance and recovery multivitamin.'},
+{id:147, name:'GNC Women’s Ultra Mega', category:'Vitamins & Supplements', form:'capsule', price:1290, desc:'Special formula for women’s health.'},
+{id:148, name:'HealthVit Vitamin K2 MK7', category:'Vitamins & Supplements', form:'capsule', price:480, desc:'Supports bone and heart health.'},
+{id:149, name:'Nature’s Bounty Hair, Skin & Nails', category:'Vitamins & Supplements', form:'tablet', price:950, desc:'Beauty supplement with biotin and collagen.'},
+{id:150, name:'Oziva Plant-Based Multivitamin', category:'Vitamins & Supplements', form:'tablet', price:780, desc:'Plant-based multivitamin for holistic health.'},
+
+
+      // Cold & Cough
+{id:201, name:'Dolo 650', category:'Cold & Cough', form:'tablet', price:35, desc:'Reduces fever and provides relief from body ache and cold.'},
+{id:202, name:'Paracetamol 500mg', category:'Cold & Cough', form:'tablet', price:30, desc:'Used to treat fever and mild cold symptoms.'},
+{id:203, name:'Sinarest Tablet', category:'Cold & Cough', form:'tablet', price:45, desc:'Relieves cold, sneezing, and nasal congestion.'},
+{id:204, name:'Cetrizine 10mg', category:'Cold & Cough', form:'tablet', price:20, desc:'Relieves allergy and cold symptoms like sneezing and runny nose.'},
+{id:205, name:'Crocin Cold & Flu Max', category:'Cold & Cough', form:'tablet', price:55, desc:'Provides fast relief from fever, cold and sore throat.'},
+{id:206, name:'Vicks Action 500', category:'Cold & Cough', form:'tablet', price:40, desc:'Effective for cold, headache, and nasal congestion.'},
+{id:207, name:'Alex Syrup', category:'Cold & Cough', form:'syrup', price:90, desc:'Cough suppressant and decongestant syrup.'},
+{id:208, name:'Benadryl Cough Syrup', category:'Cold & Cough', form:'syrup', price:110, desc:'Relieves dry and wet cough effectively.'},
+{id:209, name:'Corex DX Syrup', category:'Cold & Cough', form:'syrup', price:120, desc:'Soothes throat and controls persistent cough.'},
+{id:210, name:'Ascoril LS Syrup', category:'Cold & Cough', form:'syrup', price:115, desc:'Loosens mucus and clears chest congestion.'},
+{id:211, name:'TusQ DX Syrup', category:'Cold & Cough', form:'syrup', price:95, desc:'Relieves dry cough and throat irritation.'},
+{id:212, name:'Chericof Syrup', category:'Cold & Cough', form:'syrup', price:100, desc:'Controls dry and allergic cough.'},
+{id:213, name:'Zedex Cough Syrup', category:'Cold & Cough', form:'syrup', price:105, desc:'For dry cough and respiratory irritation.'},
+{id:214, name:'Honitus Cough Syrup', category:'Cold & Cough', form:'syrup', price:80, desc:'Ayurvedic cough syrup for cold and sore throat.'},
+{id:215, name:'Dabur Honitus Hot Sip', category:'Cold & Cough', form:'powder', price:150, desc:'Herbal instant relief for sore throat and cold.'},
+{id:216, name:'Vicks Vaporub 25ml', category:'Cold & Cough', form:'ointment', price:75, desc:'Relieves blocked nose, cough, and headache.'},
+{id:217, name:'Amrutanjan Relief Balm', category:'Cold & Cough', form:'ointment', price:50, desc:'Gives instant relief from cold and nasal congestion.'},
+{id:218, name:'Nasivion Nasal Drops', category:'Cold & Cough', form:'drops', price:85, desc:'Decongestant nasal drops for blocked nose.'},
+{id:219, name:'Otrivin Adult Nasal Spray', category:'Cold & Cough', form:'spray', price:90, desc:'Clears blocked nose in minutes.'},
+{id:220, name:'Steam Inhaler Capsules', category:'Cold & Cough', form:'capsule', price:60, desc:'For inhalation therapy to relieve congestion.'},
+{id:221, name:'Cheston Cold Tablet', category:'Cold & Cough', form:'tablet', price:50, desc:'Relieves cold, headache, and sinus pressure.'},
+{id:222, name:'T-Minic Syrup', category:'Cold & Cough', form:'syrup', price:90, desc:'Used for relief from runny nose and sneezing.'},
+{id:223, name:'Solvin Cold Tablet', category:'Cold & Cough', form:'tablet', price:45, desc:'Effective for nasal congestion and headache.'},
+{id:224, name:'Relent Tablet', category:'Cold & Cough', form:'tablet', price:40, desc:'Combination medicine for cold and cough relief.'},
+{id:225, name:'Ambrolite Syrup', category:'Cold & Cough', form:'syrup', price:75, desc:'Expectorant that helps clear mucus.'},
+{id:226, name:'Ambroxol 30mg', category:'Cold & Cough', form:'tablet', price:25, desc:'Used to treat productive cough by thinning mucus.'},
+{id:227, name:'Mucinex Expectorant', category:'Cold & Cough', form:'tablet', price:350, desc:'Loosens mucus for easier breathing.'},
+{id:228, name:'Sualin Herbal Tablets', category:'Cold & Cough', form:'tablet', price:60, desc:'Ayurvedic remedy for cough and sore throat.'},
+{id:229, name:'Zyncet 5mg', category:'Cold & Cough', form:'tablet', price:40, desc:'Used for allergy and cold-related symptoms.'},
+{id:230, name:'Cetirizine Syrup', category:'Cold & Cough', form:'syrup', price:55, desc:'Relieves cold and allergy symptoms in children.'},
+{id:231, name:'Torex Cough Syrup', category:'Cold & Cough', form:'syrup', price:110, desc:'Provides relief from sore throat and cough.'},
+{id:232, name:'Cofsils Lozenges Lemon', category:'Cold & Cough', form:'lozenge', price:25, desc:'Instant throat relief lozenges.'},
+{id:233, name:'Strepsils Honey & Lemon', category:'Cold & Cough', form:'lozenge', price:35, desc:'Soothes sore throat and reduces irritation.'},
+{id:234, name:'Halls Mentho-Lyptus', category:'Cold & Cough', form:'lozenge', price:20, desc:'Cooling relief for throat irritation.'},
+{id:235, name:'Kofol Cough Syrup', category:'Cold & Cough', form:'syrup', price:100, desc:'Ayurvedic cough syrup for throat comfort.'},
+{id:236, name:'Baidyanath Sitopaladi Churna', category:'Cold & Cough', form:'powder', price:130, desc:'Classical Ayurvedic remedy for cough and cold.'},
+{id:237, name:'Tulsi Drops', category:'Cold & Cough', form:'drops', price:95, desc:'Natural immunity booster and cold relief.'},
+{id:238, name:'Ginger Honey Syrup', category:'Cold & Cough', form:'syrup', price:80, desc:'Natural soothing syrup for sore throat.'},
+{id:239, name:'Coughex Herbal Syrup', category:'Cold & Cough', form:'syrup', price:85, desc:'Non-drowsy herbal cough relief.'},
+{id:240, name:'Levolin Inhaler', category:'Cold & Cough', form:'inhaler', price:310, desc:'Used for asthma and breathing difficulty.'},
+{id:241, name:'Asthalin Inhaler', category:'Cold & Cough', form:'inhaler', price:280, desc:'Relieves wheezing and breathlessness.'},
+{id:242, name:'Deriphyllin Tablet', category:'Cold & Cough', form:'tablet', price:50, desc:'Used in asthma and bronchitis treatment.'},
+{id:243, name:'Ambrolex Plus', category:'Cold & Cough', form:'tablet', price:65, desc:'Combination expectorant for chest congestion.'},
+{id:244, name:'Ambrovent Syrup', category:'Cold & Cough', form:'syrup', price:95, desc:'Used to treat productive cough and mucus.'},
+{id:245, name:'Coldact Capsule', category:'Cold & Cough', form:'capsule', price:60, desc:'Relieves nasal congestion and headache.'},
+{id:246, name:'Montair LC', category:'Cold & Cough', form:'tablet', price:150, desc:'Used for allergic cold and breathing problems.'},
+{id:247, name:'Rex Kuka Syrup', category:'Cold & Cough', form:'syrup', price:85, desc:'Herbal cough syrup for dry and wet cough.'},
+{id:248, name:'Grilinctus Syrup', category:'Cold & Cough', form:'syrup', price:110, desc:'Relieves dry and spasmodic cough.'},
+{id:249, name:'Tixylix Syrup', category:'Cold & Cough', form:'syrup', price:90, desc:'Children’s syrup for cough and cold.'},
+{id:250, name:'Vicks Cough Drops Menthol', category:'Cold & Cough', form:'lozenge', price:30, desc:'Relieves throat irritation and cold instantly.'},
+{id:409, name:'Benadryl Cough Syrup 100ml', category:'Cold & Cough', form:'syrup', price:130, desc:'Relieves cough, throat irritation and congestion.'},
+{id:410, name:'Corex DX Syrup', category:'Cold & Cough', form:'syrup', price:150, desc:'Cough suppressant with soothing action on throat.'},
+{id:411, name:'Ascoril LS Syrup', category:'Cold & Cough', form:'syrup', price:120, desc:'Relieves wet cough by loosening mucus.'},
+{id:412, name:'Ascoril D Plus', category:'Cold & Cough', form:'syrup', price:130, desc:'Dry cough relief syrup with fast action.'},
+{id:413, name:'Chericof Syrup', category:'Cold & Cough', form:'syrup', price:115, desc:'Provides relief from allergic cough and congestion.'},
+{id:414, name:'Koflet Syrup (Himalaya)', category:'Cold & Cough', form:'syrup', price:90, desc:'Ayurvedic herbal syrup for cough and sore throat.'},
+{id:415, name:'Zedex Syrup', category:'Cold & Cough', form:'syrup', price:110, desc:'For dry and allergic cough relief.'},
+{id:416, name:'Grilinctus Syrup', category:'Cold & Cough', form:'syrup', price:140, desc:'Effective for both dry and productive cough.'},
+{id:417, name:'Torex Cough Syrup', category:'Cold & Cough', form:'syrup', price:100, desc:'Herbal cough syrup with natural ingredients.'},
+{id:418, name:'Honitus Cough Syrup', category:'Cold & Cough', form:'syrup', price:95, desc:'Honey-based ayurvedic syrup for cold and sore throat.'},
+
+
+
+      // Diabetes Care
+{id:301, name:'Gluconorm G2 Tablet', category:'Diabetes Care', form:'tablet', price:120, desc:'Helps control high blood sugar in type 2 diabetes.'},
+{id:302, name:'Metformin 500mg', category:'Diabetes Care', form:'tablet', price:60, desc:'Reduces glucose production and improves insulin sensitivity.'},
+{id:303, name:'Glycomet GP 1', category:'Diabetes Care', form:'tablet', price:95, desc:'Combination of Metformin and Glimepiride for diabetes control.'},
+{id:304, name:'Amaryl 2mg', category:'Diabetes Care', form:'tablet', price:150, desc:'Helps lower blood sugar levels effectively.'},
+{id:305, name:'Janumet 50/500mg', category:'Diabetes Care', form:'tablet', price:320, desc:'Combination of Sitagliptin and Metformin for sugar control.'},
+{id:306, name:'Januvia 100mg', category:'Diabetes Care', form:'tablet', price:430, desc:'Improves glycemic control in adults with type 2 diabetes.'},
+{id:307, name:'Voglibose 0.3mg', category:'Diabetes Care', form:'tablet', price:80, desc:'Delays glucose absorption to control post-meal sugar levels.'},
+{id:308, name:'Voglitab M', category:'Diabetes Care', form:'tablet', price:130, desc:'Combination of Voglibose and Metformin for diabetes management.'},
+{id:309, name:'Glimepiride 2mg', category:'Diabetes Care', form:'tablet', price:70, desc:'Stimulates insulin release from the pancreas.'},
+{id:310, name:'Pioglit MF', category:'Diabetes Care', form:'tablet', price:140, desc:'Combination of Pioglitazone and Metformin for sugar control.'},
+{id:311, name:'Insulin Glargine Injection 100IU/ml', category:'Diabetes Care', form:'injection', price:680, desc:'Long-acting insulin for glucose control in diabetics.'},
+{id:312, name:'Human Mixtard 30/70 Insulin', category:'Diabetes Care', form:'injection', price:360, desc:'Intermediate-acting insulin for diabetes management.'},
+{id:313, name:'Lantus Solostar Pen', category:'Diabetes Care', form:'injection', price:890, desc:'Pre-filled insulin pen for type 1 & 2 diabetes.'},
+{id:314, name:'Novorapid Flexpen', category:'Diabetes Care', form:'injection', price:950, desc:'Fast-acting insulin for meal-time glucose control.'},
+{id:315, name:'Humalog Kwikpen', category:'Diabetes Care', form:'injection', price:940, desc:'Insulin lispro for quick blood sugar regulation.'},
+{id:316, name:'Basalog 100IU/ml', category:'Diabetes Care', form:'injection', price:720, desc:'Long-acting insulin analogue for steady glucose control.'},
+{id:317, name:'Accu-Chek Active Glucometer', category:'Diabetes Care', form:'device', price:1350, desc:'Blood glucose monitoring device for home testing.'},
+{id:318, name:'OneTouch Select Plus Glucometer', category:'Diabetes Care', form:'device', price:1450, desc:'Accurate blood sugar monitor with easy strip insertion.'},
+{id:319, name:'Contour Plus Glucometer', category:'Diabetes Care', form:'device', price:1250, desc:'Simple glucose testing with high accuracy.'},
+{id:320, name:'Accu-Chek Instant Test Strips (50)', category:'Diabetes Care', form:'strip', price:900, desc:'Compatible strips for Accu-Chek glucometers.'},
+{id:321, name:'OneTouch Select Test Strips (50)', category:'Diabetes Care', form:'strip', price:950, desc:'Used with OneTouch glucometers for blood sugar testing.'},
+{id:322, name:'Contour Plus Strips (50)', category:'Diabetes Care', form:'strip', price:890, desc:'Glucometer strips with fast and accurate readings.'},
+{id:323, name:'Dr. Morepen Gluco One BG-03', category:'Diabetes Care', form:'device', price:1100, desc:'Affordable blood glucose monitor for daily testing.'},
+{id:324, name:'Dr. Morepen Test Strips (50)', category:'Diabetes Care', form:'strip', price:650, desc:'Compatible with Dr. Morepen glucometers.'},
+{id:325, name:'Ensure Diabetes Care Vanilla 400g', category:'Diabetes Care', form:'powder', price:690, desc:'Nutritional drink for diabetic adults.'},
+{id:326, name:'Prohance D 400g', category:'Diabetes Care', form:'powder', price:650, desc:'Balanced supplement for diabetes management.'},
+{id:327, name:'Diasip Nutritional Drink 200ml', category:'Diabetes Care', form:'drink', price:180, desc:'Clinically designed nutrition for diabetic patients.'},
+{id:328, name:'Nutricharge Diabetic Protein 400g', category:'Diabetes Care', form:'powder', price:700, desc:'Protein-rich supplement for diabetic nutrition.'},
+{id:329, name:'Glucon-D Lite', category:'Diabetes Care', form:'powder', price:180, desc:'Low-calorie energy drink for diabetics.'},
+{id:330, name:'Sugar Free Gold 500 Pellets', category:'Diabetes Care', form:'tablet', price:120, desc:'Zero-calorie sweetener suitable for diabetics.'},
+{id:331, name:'Sugar Free Natura 100g', category:'Diabetes Care', form:'powder', price:150, desc:'Natural sweetener alternative to sugar.'},
+{id:332, name:'Sugar Free Green Stevia', category:'Diabetes Care', form:'powder', price:190, desc:'Stevia-based natural sugar substitute.'},
+{id:333, name:'Herbal Hills Diabohills Tablets', category:'Diabetes Care', form:'tablet', price:220, desc:'Ayurvedic formula to support blood sugar balance.'},
+{id:334, name:'Himalaya Diabecon DS', category:'Diabetes Care', form:'tablet', price:180, desc:'Ayurvedic supplement for diabetes management.'},
+{id:335, name:'Kerala Ayurveda DiaCare', category:'Diabetes Care', form:'tablet', price:200, desc:'Supports healthy blood sugar levels naturally.'},
+{id:336, name:'Baidyanath Madhumehari Granules', category:'Diabetes Care', form:'powder', price:180, desc:'Ayurvedic formula for sugar control.'},
+{id:337, name:'Patanjali Divya Madhunashini Vati', category:'Diabetes Care', form:'tablet', price:160, desc:'Helps regulate blood sugar naturally.'},
+{id:338, name:'D-CARE Capsule', category:'Diabetes Care', form:'capsule', price:240, desc:'Herbal supplement for sugar control.'},
+{id:339, name:'Hamdard Diabecon Capsules', category:'Diabetes Care', form:'capsule', price:230, desc:'Unani medicine for controlling diabetes.'},
+{id:340, name:'Sugar Knocker Ayurvedic Capsules', category:'Diabetes Care', form:'capsule', price:350, desc:'Natural herbal formulation for managing diabetes.'},
+{id:341, name:'Charak Diabeta Plus', category:'Diabetes Care', form:'capsule', price:250, desc:'Supports pancreas function and glucose metabolism.'},
+{id:342, name:'DiabeSmart Atta 1kg', category:'Diabetes Care', form:'food', price:290, desc:'Low GI wheat flour for diabetic-friendly diet.'},
+{id:343, name:'Sugar Free Cookies 200g', category:'Diabetes Care', form:'food', price:130, desc:'Healthy snack for diabetic individuals.'},
+{id:344, name:'Diabetic Rice 1kg', category:'Diabetes Care', form:'food', price:240, desc:'Low glycemic index rice for sugar control.'},
+{id:345, name:'Diabetic Tea 100g', category:'Diabetes Care', form:'tea', price:180, desc:'Herbal tea blend for maintaining healthy sugar levels.'},
+{id:346, name:'Diabetic Care Juice 1L', category:'Diabetes Care', form:'juice', price:210, desc:'Blend of herbs like karela, jamun, and amla.'},
+{id:347, name:'Karela Jamun Juice 1L', category:'Diabetes Care', form:'juice', price:220, desc:'Ayurvedic juice for diabetes and immunity.'},
+{id:348, name:'Sugar Balance Capsule', category:'Diabetes Care', form:'capsule', price:280, desc:'Supports glucose metabolism and pancreas health.'},
+{id:349, name:'Diabecure Tablet', category:'Diabetes Care', form:'tablet', price:190, desc:'Herbal formulation for blood sugar management.'},
+{id:350, name:'Insugen 30/70 Cartridge', category:'Diabetes Care', form:'injection', price:400, desc:'Insulin cartridge for type 2 diabetes patients.'},
+{id:419, name:'Patanjali Karela Jamun Juice 500ml', category:'Diabetes Care', form:'syrup', price:160, desc:'Ayurvedic juice helps in controlling blood sugar.'},
+{id:420, name:'Baidyanath Madhumehari Syrup', category:'Diabetes Care', form:'syrup', price:190, desc:'Herbal formulation for diabetes management.'},
+{id:421, name:'Dabur Madhurakshak Syrup', category:'Diabetes Care', form:'syrup', price:180, desc:'Helps in maintaining healthy blood sugar levels.'},
+{id:422, name:'Hamdard Diabecon Syrup', category:'Diabetes Care', form:'syrup', price:200, desc:'Unani herbal syrup to control blood glucose.'},
+{id:423, name:'Charak Diabeta Syrup', category:'Diabetes Care', form:'syrup', price:175, desc:'Natural herbal blend for glucose management.'},
+{id:424, name:'Kerala Ayurveda Diacare Syrup', category:'Diabetes Care', form:'syrup', price:185, desc:'Supports pancreas function and sugar metabolism.'},
+{id:425, name:'Herbal Hills Diabohills Syrup', category:'Diabetes Care', form:'syrup', price:190, desc:'Herbal syrup to support diabetic wellness.'},
+
+
+    ];
+
+    const categories = [...new Set(products.map(p=>p.category))];
+
+    // App state
+    let state = {
+      activeCategory: 'All',
+      filter: 'all',
+      sort: 'relevance',
+      query: '',
+      cart: {}
+    };
+
+    // Elements
+    const categoriesEl = document.getElementById('categories');
+    const productsGrid = document.getElementById('productsGrid');
+    const filterSelect = document.getElementById('filterSelect');
+    const sortSelect = document.getElementById('sortSelect');
+    const searchInput = document.getElementById('searchInput');
+    const cartBtn = document.getElementById('cartBtn');
+    const cartDrawer = document.getElementById('cartDrawer');
+    const closeCart = document.getElementById('closeCart');
+    const cartItemsEl = document.getElementById('cartItems');
+    const cartCount = document.getElementById('cartCount');
+    const cartSubtotal = document.getElementById('cartSubtotal');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modalContent');
+    const modalClose = document.getElementById('modalClose');
+
+    // Initialize UI
+    function init() {
+      renderCategories();
+      renderProducts();
+      attachEventListeners();
+      updateCartUI();
+    }
+
+    function renderCategories(){
+      categoriesEl.innerHTML = '';
+      const allLi = document.createElement('li');
+      allLi.innerHTML = `<button class="px-3 py-1 rounded-md bg-indigo-50 text-indigo-700 text-sm" data-cat="All">All</button>`;
+      categoriesEl.appendChild(allLi);
+      categories.forEach(cat=>{
+        const li = document.createElement('li');
+        li.innerHTML = `<button class="px-3 py-1 rounded-md text-sm border" data-cat="${cat}">${cat}</button>`;
+        categoriesEl.appendChild(li);
+      });
+
+      // Mark active
+      Array.from(categoriesEl.querySelectorAll('button')).forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          state.activeCategory = btn.dataset.cat;
+          Array.from(categoriesEl.querySelectorAll('button')).forEach(b=>b.classList.remove('bg-indigo-50','text-indigo-700'));
+          btn.classList.add('bg-indigo-50','text-indigo-700');
+          renderProducts();
+        });
+      });
+
+      // Set default active All
+      categoriesEl.querySelector('button[data-cat="All"]').classList.add('bg-indigo-50','text-indigo-700');
+    }
+
+    function renderProducts(){
+      const q = state.query.trim().toLowerCase();
+      let list = products.filter(p=>{
+        if(state.activeCategory !== 'All' && p.category !== state.activeCategory) return false;
+        if(state.filter !== 'all' && p.form !== state.filter) return false;
+        if(q){
+          return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+        }
+        return true;
+      });
+
+      if(state.sort === 'price-asc') list.sort((a,b)=>a.price-b.price);
+      if(state.sort === 'price-desc') list.sort((a,b)=>b.price-a.price);
+
+      productsGrid.innerHTML = '';
+      if(list.length === 0){
+        productsGrid.innerHTML = '<div class="col-span-full text-center text-gray-500">Koi product nahi mila.</div>';
+        return;
+      }
+
+      list.forEach(p=>{
+        const card = document.createElement('article');
+        card.className = 'card bg-white p-4 rounded-lg border';
+        card.innerHTML = `
+          <div class="flex items-start gap-4">
+            <div class="w-20 h-20 rounded-md bg-gray-100 flex items-center justify-center text-sm text-gray-600">${p.form.toUpperCase()}</div>
+            <div class="flex-1">
+              <h3 class="font-semibold">${p.name}</h3>
+              <p class="text-sm text-gray-500 mt-1">${p.desc}</p>
+              <div class="mt-3 flex items-center justify-between">
+                <div class="text-lg font-semibold">₹${p.price}</div>
+                <div class="flex gap-2">
+                  <button class="text-sm px-3 py-1 border rounded viewBtn" data-id="${p.id}">View</button>
+                  <button class="text-sm px-3 py-1 bg-indigo-600 text-white rounded addBtn" data-id="${p.id}">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        productsGrid.appendChild(card);
+      });
+
+      // attach actions
+      Array.from(document.querySelectorAll('.addBtn')).forEach(b=>b.addEventListener('click', ()=> addToCart(parseInt(b.dataset.id))));
+      Array.from(document.querySelectorAll('.viewBtn')).forEach(b=>b.addEventListener('click', ()=> openModal(parseInt(b.dataset.id))));
+    }
+
+    function attachEventListeners(){
+      filterSelect.addEventListener('change', ()=>{ state.filter = filterSelect.value; renderProducts(); });
+      sortSelect.addEventListener('change', ()=>{ state.sort = sortSelect.value; renderProducts(); });
+      searchInput.addEventListener('input', ()=>{ state.query = searchInput.value; renderProducts(); });
+
+      cartBtn.addEventListener('click', ()=>{ cartDrawer.style.transform = 'translateX(0)'; });
+      closeCart.addEventListener('click', ()=>{ cartDrawer.style.transform = 'translateX(100%)'; });
+
+      modalClose.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+
+      checkoutBtn.addEventListener('click', ()=>{
+        alert('Checkout demo — integrate payment gateway as needed.');
+      });
+    }
+
+    function addToCart(id){
+      if(!state.cart[id]) state.cart[id] = 0;
+      state.cart[id] += 1;
+      updateCartUI();
+    }
+
+    function removeFromCart(id){
+      delete state.cart[id];
+      updateCartUI();
+    }
+
+    function changeQty(id, qty){
+      if(qty <= 0){ removeFromCart(id); return; }
+      state.cart[id] = qty;
+      updateCartUI();
+    }
+
+    function updateCartUI(){
+      // cart count
+      const totalItems = Object.values(state.cart).reduce((a,b)=>a+b,0);
+      cartCount.textContent = totalItems;
+
+      // cart items list
+      cartItemsEl.innerHTML = '';
+      let subtotal = 0;
+      if(totalItems === 0){
+        cartItemsEl.innerHTML = '<div class="text-gray-500">Cart is empty.</div>';
+      } else {
+        for(const [idStr,qty] of Object.entries(state.cart)){
+          const id = parseInt(idStr);
+          const p = products.find(x=>x.id===id);
+          if(!p) continue;
+          subtotal += p.price * qty;
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between border p-2 rounded';
+          row.innerHTML = `
+            <div>
+              <div class="font-semibold">${p.name}</div>
+              <div class="text-sm text-gray-500">₹${p.price} × ${qty}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-2 py-1 border decreaseBtn" data-id="${id}">-</button>
+              <div class="px-2">${qty}</div>
+              <button class="px-2 py-1 border increaseBtn" data-id="${id}">+</button>
+              <button class="ml-2 text-sm text-red-500 removeBtn" data-id="${id}">Remove</button>
+            </div>
+          `;
+          cartItemsEl.appendChild(row);
+        }
+      }
+      cartSubtotal.textContent = `₹${subtotal}`;
+
+      // hook buttons
+      Array.from(document.querySelectorAll('.increaseBtn')).forEach(b=>b.addEventListener('click', ()=>{
+        const id = parseInt(b.dataset.id); changeQty(id, state.cart[id]+1);
+      }));
+      Array.from(document.querySelectorAll('.decreaseBtn')).forEach(b=>b.addEventListener('click', ()=>{
+        const id = parseInt(b.dataset.id); changeQty(id, state.cart[id]-1);
+      }));
+      Array.from(document.querySelectorAll('.removeBtn')).forEach(b=>b.addEventListener('click', ()=>{
+        const id = parseInt(b.dataset.id); removeFromCart(id);
+      }));
+    }
+
+    function openModal(id){
+      const p = products.find(x=>x.id===id);
+      if(!p) return;
+      modalContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-1 bg-gray-100 rounded p-6 flex items-center justify-center text-sm">${p.form.toUpperCase()}</div>
+          <div class="md:col-span-2">
+            <h2 class="text-xl font-semibold">${p.name}</h2>
+            <p class="text-sm text-gray-500 mt-2">${p.desc}</p>
+            <div class="mt-4 flex items-center justify-between">
+              <div class="text-2xl font-bold">₹${p.price}</div>
+              <div class="flex gap-2">
+                <button class="px-4 py-2 border viewAddBtn" data-id="${p.id}">Add to Cart</button>
+                <button class="px-4 py-2" id="closeModalBtn">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+      Array.from(document.getElementsByClassName('viewAddBtn')).forEach(b=>b.addEventListener('click', ()=>{ addToCart(parseInt(b.dataset.id)); closeModal(); }));
+    }
+    function closeModal(){ modal.classList.add('hidden'); }
+
+    // Kickoff
+    init();
+
+  </script>
+  
+
+</body>
+</html>

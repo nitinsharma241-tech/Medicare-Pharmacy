@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pain Relief Shop — All in one</title>
+  <style>
+    :root{
+      --accent:#2563eb;
+      --muted:#6b7280;
+      --card-bg:#ffffff;
+      --bg:#f3f4f6;
+      --success:#16a34a;
+      --danger:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, Arial, sans-serif;
+      background:var(--bg);
+      color:#111827;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* NAVBAR */
+    .navbar{
+      background:linear-gradient(90deg,#0ea5e9,#2563eb);
+      color:white;
+      padding:12px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .brand .logo{
+      width:44px;height:44px;border-radius:8px;
+      background:#fff3; display:flex;align-items:center;justify-content:center;font-weight:700;
+    }
+    .brand h1{margin:0;font-size:18px}
+    .nav-actions{display:flex;gap:10px;align-items:center}
+    .search{
+      padding:6px 10px;border-radius:8px;border:none;min-width:260px;
+    }
+    .cart-btn{
+      background:rgba(255,255,255,0.12);color:white;padding:8px 12px;border-radius:8px;border:none;
+      cursor:pointer;position:relative;
+    }
+    .cart-badge{
+      position:absolute;top:-6px;right:-6px;background:var(--danger);color:white;padding:2px 6px;border-radius:999px;font-size:12px;
+    }
+
+    /* LAYOUT */
+    .container{max-width:1100px;margin:22px auto;padding:0 14px}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .select, .btn{padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb;background:white;}
+    .btn{cursor:pointer;background:var(--accent);color:white;border:none}
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap:14px;
+    }
+
+    /* CARD */
+    .card{
+      background:var(--card-bg);
+      border-radius:10px;
+      padding:12px;
+      box-shadow:0 6px 18px rgba(16,24,40,0.06);
+      display:flex;flex-direction:column;gap:10px;
+      transition:transform .12s ease,box-shadow .12s ease;
+    }
+    .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(16,24,40,0.08)}
+    .thumb{width:100%;height:140px;border-radius:8px;object-fit:cover;background:#f1f5f9}
+    .meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .title{font-weight:600;font-size:15px;margin:0}
+    .desc{color:var(--muted);font-size:13px;margin:0}
+    .price{color:var(--danger);font-weight:700}
+    .card-actions{display:flex;gap:8px;align-items:center;margin-top:auto}
+    .small{padding:6px 8px;font-size:13px;border-radius:8px;border:1px solid #e5e7eb;background:white}
+    .add{background:var(--accent);color:white;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+
+    /* CART DRAWER */
+    .cart-drawer{
+      position:fixed;right:0;top:0;height:100vh;width:360px;background:white;
+      box-shadow:-10px 0 30px rgba(2,6,23,0.2);transform:translateX(110%);transition:transform .25s ease;
+      display:flex;flex-direction:column;z-index:80;
+    }
+    .cart-drawer.open{transform:translateX(0)}
+    .cart-head{padding:16px;border-bottom:1px solid #eef2f7;display:flex;justify-content:space-between;align-items:center}
+    .cart-body{padding:16px;overflow:auto;flex:1}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed #f3f4f6}
+    .cart-item .c-thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#f8fafc}
+    .qty{display:flex;gap:6px;align-items:center}
+    .qty button{width:28px;height:28px;border-radius:6px;border:1px solid #e5e7eb;background:white;cursor:pointer}
+    .cart-footer{padding:16px;border-top:1px solid #eef2f7}
+    .total-row{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:12px}
+
+    /* responsive */
+    @media (max-width:640px){
+      .cart-drawer{width:100%;max-width:420px}
+      .search{min-width:140px}
+      .container{padding:0 12px}
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="brand">
+      <div class="logo">PH</div>
+      <div>
+        <h1>Medicare Pharmacy</h1>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Pain Relief Catalog</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <input id="searchInput" class="search" placeholder="Search medicine, tube, spray..." />
+      <select id="filterSelect" class="select">
+        <option value="all">All forms</option>
+        <option value="tablet">Tablet</option>
+        <option value="ointment">Ointment / Gel</option>
+        <option value="spray">Spray</option>
+        <option value="syrup">Syrup</option>
+        <option value="oil">Oil</option>
+      </select>
+      <button class="cart-btn" id="openCartBtn">Cart <span class="cart-badge" id="cartCount">0</span></button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="controls">
+      <div style="flex:1">
+        <h2 style="margin:0 0 6px 0">Pain Relief — 20 items</h2>
+        <p style="margin:0;color:var(--muted);font-size:13px">Tablets, tubes, sprays, oils — Add to cart & book instantly</p>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="sortSelect" class="select">
+          <option value="relevance">Sort: Relevance</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+        </select>
+        <button class="btn" id="clearCartBtn" title="Clear cart">Clear Cart</button>
+      </div>
+    </div>
+
+    <section class="grid" id="productsGrid">
+      <!-- products injected by JS -->
+    </section>
+  </main>
+
+  <!-- CART DRAWER -->
+  <aside class="cart-drawer" id="cartDrawer" aria-hidden="true">
+    <div class="cart-head">
+      <div>
+        <strong>Your Cart</strong><br>
+        <small id="cartItemsCountText" style="color:var(--muted)"></small>
+      </div>
+      <div>
+        <button id="closeCart" style="background:transparent;border:0;font-size:18px;cursor:pointer">✕</button>
+      </div>
+    </div>
+
+    <div class="cart-body" id="cartBody">
+      <!-- cart items -->
+    </div>
+
+    <div class="cart-footer">
+      <div class="total-row">
+        <div>Subtotal</div>
+        <div id="cartSubtotal">₹0.00</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="bookNowBtn" style="flex:1;background:var(--success)">Book Now</button>
+        <button class="btn" id="checkoutDemoBtn" style="flex:1;background:var(--accent)">Checkout</button>
+      </div>
+    </div>
+  </aside>
+
+<script>
+/* =========================
+   Data: 20 pain relief items
+   fields: id, name, form, price, img, desc
+   ========================= */
+const products = [
+  {id:1,name:"Paracetamol 500mg",form:"tablet",price:25,img:"https://images.unsplash.com/photo-1580281657523-47a36c5ba55c?w=800&q=60",desc:"Pain reliever & fever reducer."},
+  {id:2,name:"Ibuprofen 400mg",form:"tablet",price:45,img:"https://images.unsplash.com/photo-1588771930297-37f40f9d24aa?w=800&q=60",desc:"Anti-inflammatory pain relief."},
+  {id:3,name:"Dolo 650",form:"tablet",price:30,img:"https://images.unsplash.com/photo-1550572017-4b09547590ca?w=800&q=60",desc:"Reliable pain & fever tablet."},
+  {id:4,name:"Combiflam",form:"tablet",price:48,img:"https://images.unsplash.com/photo-1580281657935-7f53a15c9997?w=800&q=60",desc:"Pain & fever combination."},
+  {id:5,name:"Naprosyn 500mg",form:"tablet",price:65,img:"https://images.unsplash.com/photo-1588771930297-37f40f9d24aa?w=800&q=60",desc:"Used for chronic pain."},
+  {id:6,name:"Volini Gel 30g",form:"ointment",price:110,img:"https://images.unsplash.com/photo-1580281658359-013c643ebae7?w=800&q=60",desc:"Topical gel for joints."},
+  {id:7,name:"Moov Pain Gel 60g",form:"ointment",price:95,img:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=60",desc:"Muscle pain reliever gel."},
+  {id:8,name:"Iodex Balm 25g",form:"ointment",price:60,img:"https://images.unsplash.com/photo-1580281658579-47bd5e2ad653?w=800&q=60",desc:"Cooling analgesic balm."},
+  {id:9,name:"Volini Spray 100ml",form:"spray",price:130,img:"https://images.unsplash.com/photo-1598977104825-11c7eab7a6f4?w=800&q=60",desc:"Quick relief spray for back."},
+  {id:10,name:"Moov Spray 75ml",form:"spray",price:140,img:"https://images.unsplash.com/photo-1556817411-31ae72fa3ea0?w=800&q=60",desc:"Portable pain spray."},
+  {id:11,name:"Tiger Balm 19g",form:"ointment",price:90,img:"https://images.unsplash.com/photo-1544986581-efac024faf62?w=800&q=60",desc:"Popular topical balm."},
+  {id:12,name:"Deep Heat Gel 30g",form:"ointment",price:140,img:"https://images.unsplash.com/photo-1579719912887-c1a9bee1a4b9?w=800&q=60",desc:"Heat therapy gel."},
+  {id:13,name:"Pain Relief Spray - Fast",form:"spray",price:155,img:"https://images.unsplash.com/photo-1605441601855-bde43a655cd1?w=800&q=60",desc:"Fast-acting spray."},
+  {id:14,name:"Muscle Ease Oil 100ml",form:"oil",price:180,img:"https://images.unsplash.com/photo-1542444459-db63a00395f7?w=800&q=60",desc:"Ayurvedic oil for muscles."},
+  {id:15,name:"Relispray 50ml",form:"spray",price:105,img:"https://images.unsplash.com/photo-1564881086967-d7f19fc0d0ec?w=800&q=60",desc:"Topical quick relief."},
+  {id:16,name:"Naproxen 250mg",form:"tablet",price:65,img:"https://images.unsplash.com/photo-1616469828338-65d3fca16db2?w=800&q=60",desc:"Joint pain tablet."},
+  {id:17,name:"Aceclofenac 100mg",form:"tablet",price:75,img:"https://images.unsplash.com/photo-1580281658933-0c4448bafdee?w=800&q=60",desc:"Anti-inflammatory tablet."},
+  {id:18,name:"Dard Mukti Balm",form:"ointment",price:50,img:"https://images.unsplash.com/photo-1580281658531-415b24d3dbe3?w=800&q=60",desc:"Popular ayurvedic balm."},
+  {id:19,name:"Pain-O-Kill Syrup",form:"syrup",price:70,img:"https://images.unsplash.com/photo-1542006153278-6a3d9e0d8f2b?w=800&q=60",desc:"Syrup for kids/adults."},
+  {id:20,name:"Joint Relief Cream 60g",form:"ointment",price:150,img:"https://images.unsplash.com/photo-1566843970290-e31a26745a04?w=800&q=60",desc:"Cream for joints & knees."}
+];
+
+/* App state: cart stored in localStorage as array of {id, qty} */
+let cart = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+
+const productsGrid = document.getElementById('productsGrid');
+const cartDrawer = document.getElementById('cartDrawer');
+const openCartBtn = document.getElementById('openCartBtn');
+const closeCartBtn = document.getElementById('closeCart');
+const cartBody = document.getElementById('cartBody');
+const cartSubtotalEl = document.getElementById('cartSubtotal');
+const cartCountEl = document.getElementById('cartCount');
+const cartItemsCountText = document.getElementById('cartItemsCountText');
+const searchInput = document.getElementById('searchInput');
+const filterSelect = document.getElementById('filterSelect');
+const sortSelect = document.getElementById('sortSelect');
+const clearCartBtn = document.getElementById('clearCartBtn');
+const bookNowBtn = document.getElementById('bookNowBtn');
+const checkoutDemoBtn = document.getElementById('checkoutDemoBtn');
+
+/* Render products */
+function renderProducts(list = products){
+  productsGrid.innerHTML = '';
+  list.forEach(p=>{
+    const el = document.createElement('article');
+    el.className = 'card';
+    el.innerHTML = `
+      <img class="thumb" src="${p.img}" alt="${p.name}">
+      <div>
+        <p class="title">${p.name}</p>
+        <p class="desc">${p.desc}</p>
+      </div>
+      <div class="meta">
+        <div class="price">₹${p.price}</div>
+        <div style="font-size:12px;color:var(--muted)">${p.form.toUpperCase()}</div>
+      </div>
+      <div class="card-actions">
+        <button class="small" onclick="viewDetails(${p.id})">View</button>
+        <button class="add" onclick="addToCart(${p.id})">Add to Cart</button>
+      </div>
+    `;
+    productsGrid.appendChild(el);
+  });
+}
+
+/* Add to cart: if exists increment qty else add */
+function addToCart(productId){
+  const existing = cart.find(i=>i.id===productId);
+  if(existing) existing.qty += 1;
+  else cart.push({id:productId, qty:1});
+  saveCart();
+  updateCartUI();
+  flash(`${getProduct(productId).name} added to cart`);
+}
+
+/* Decrease / Increase / Remove */
+function changeQty(productId, delta){
+  const idx = cart.findIndex(i=>i.id===productId);
+  if(idx===-1) return;
+  cart[idx].qty += delta;
+  if(cart[idx].qty <= 0) cart.splice(idx,1);
+  saveCart();
+  updateCartUI();
+}
+
+function removeItem(productId){
+  cart = cart.filter(i=>i.id!==productId);
+  saveCart();
+  updateCartUI();
+}
+
+/* Save cart to localStorage */
+function saveCart(){
+  localStorage.setItem('shoppingCart', JSON.stringify(cart));
+}
+
+/* Utility: get product */
+function getProduct(id){ return products.find(p=>p.id===id); }
+
+/* Update cart drawer UI */
+function updateCartUI(){
+  // badge
+  const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+  cartCountEl.textContent = totalItems;
+  cartItemsCountText.textContent = `${totalItems} item(s) in cart`;
+
+  // body
+  cartBody.innerHTML = '';
+  if(cart.length===0){
+    cartBody.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">Your cart is empty.</div>`;
+    cartSubtotalEl.textContent = '₹0.00';
+    return;
+  }
+  let subtotal = 0;
+  cart.forEach(entry=>{
+    const p = getProduct(entry.id);
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+    const itemTotal = p.price * entry.qty;
+    subtotal += itemTotal;
+    row.innerHTML = `
+      <img class="c-thumb" src="${p.img}" alt="${p.name}">
+      <div style="flex:1">
+        <div style="font-weight:600">${p.name}</div>
+        <div style="font-size:13px;color:var(--muted)">₹${p.price} × ${entry.qty} = ₹${itemTotal}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="qty">
+          <button onclick="changeQty(${p.id}, -1)">−</button>
+          <div style="min-width:28px;text-align:center">${entry.qty}</div>
+          <button onclick="changeQty(${p.id}, 1)">+</button>
+        </div>
+        <button style="background:transparent;border:0;color:var(--danger);cursor:pointer;font-size:13px" onclick="removeItem(${p.id})">Remove</button>
+      </div>
+    `;
+    cartBody.appendChild(row);
+  });
+  cartSubtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
+}
+
+/* Open / close cart */
+openCartBtn.addEventListener('click', ()=>{ cartDrawer.classList.add('open'); cartDrawer.setAttribute('aria-hidden','false'); updateCartUI(); });
+closeCartBtn.addEventListener('click', ()=>{ cartDrawer.classList.remove('open'); cartDrawer.setAttribute('aria-hidden','true'); });
+
+/* Book Now */
+bookNowBtn.addEventListener('click', ()=>{
+  if(cart.length===0){ alert('Cart is empty'); return; }
+  // Demo: collect simple order payload
+  const order = cart.map(i=>({ product:getProduct(i.id).name, qty:i.qty }));
+  // In real app send to server here. For demo we show simple confirm.
+  const total = cart.reduce((s,i)=>s + getProduct(i.id).price * i.qty, 0);
+  if(confirm(`Confirm booking for ${order.length} item(s). Total ₹${total.toFixed(2)} ?`)){
+    // Simulate booking success
+    alert('✅ Order booked successfully! Order summary will be emailed (demo).');
+    cart = [];
+    saveCart();
+    updateCartUI();
+    cartDrawer.classList.remove('open');
+  }
+});
+
+/* Checkout demo */
+checkoutDemoBtn.addEventListener('click', ()=>{
+  alert('Checkout demo — integrate payment gateway here.');
+});
+
+/* Clear cart */
+clearCartBtn.addEventListener('click', ()=>{
+  if(confirm('Clear cart?')){ cart = []; saveCart(); updateCartUI(); }
+});
+
+/* Search / filter / sort */
+searchInput.addEventListener('input', applyFilters);
+filterSelect.addEventListener('change', applyFilters);
+sortSelect.addEventListener('change', applyFilters);
+
+function applyFilters(){
+  let q = searchInput.value.trim().toLowerCase();
+  let filtered = products.filter(p=>{
+    if(filterSelect.value !== 'all' && p.form !== filterSelect.value) return false;
+    if(!q) return true;
+    return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q);
+  });
+  if(sortSelect.value === 'price-asc') filtered.sort((a,b)=>a.price-b.price);
+  if(sortSelect.value === 'price-desc') filtered.sort((a,b)=>b.price-a.price);
+  renderProducts(filtered);
+}
+
+/* View details modal — simple alert for demo */
+function viewDetails(id){
+  const p = getProduct(id);
+  alert(`${p.name}\n\n${p.desc}\n\nPrice: ₹${p.price}`);
+}
+
+/* small flash message (browser toast) */
+function flash(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:#111;color:white;padding:8px 14px;border-radius:8px;z-index:1000;opacity:0;transition:opacity .2s';
+  document.body.appendChild(t);
+  requestAnimationFrame(()=> t.style.opacity = '1');
+  setTimeout(()=>{ t.style.opacity = '0'; setTimeout(()=>t.remove(),250); },1600);
+}
+
+/* init */
+renderProducts();
+updateCartUI();
+
+/* preserve cart across reloads - already handled by localStorage */
+</script>
+
+</body>
+</html>

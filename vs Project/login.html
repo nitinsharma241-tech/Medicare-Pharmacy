@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login / Signup</title>
+  <link rel="stylesheet" href="login.css">
+  <style>
+    .captcha-box {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    .captcha-text {
+      background: #007b83;
+      color: white;
+      font-size: 20px;
+      padding: 8px 15px;
+      border-radius: 5px;
+      letter-spacing: 3px;
+    }
+    .reload-btn {
+      cursor: pointer;
+      padding: 5px 10px;
+      background: #eee;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="auth-container">
+    <h2 id="formTitle">Login</h2>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" class="form active">
+      <input type="email" id="loginEmail" placeholder="Email" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+
+      <!-- CAPTCHA -->
+      <div class="captcha-box">
+        <div id="captcha" class="captcha-text"></div>
+        <div class="reload-btn" onclick="generateCaptcha()">⟳</div>
+      </div>
+
+      <input type="text" id="captchaInput" placeholder="Enter CAPTCHA" required>
+
+      <button type="submit" class="btn">Login</button>
+
+      <p class="switch-text">Don’t have an account? <span onclick="showSignup()">Signup</span></p>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="signupForm" class="form">
+      <input type="text" id="signupName" placeholder="Full Name" required>
+      <input type="tel" id="signupPhone" placeholder="Phone Number" required>
+      <input type="email" id="signupEmail" placeholder="Email" required>
+      <input type="password" id="signupPassword" placeholder="Password" required>
+
+      <button type="submit" class="btn">Signup</button>
+
+      <p class="switch-text">Already have an account? <span onclick="showLogin()">Login</span></p>
+    </form>
+  </div>
+
+<script>
+// Switch Forms
+function showSignup() {
+    document.getElementById("formTitle").innerText = "Signup";
+    document.getElementById("loginForm").classList.remove("active");
+    document.getElementById("signupForm").classList.add("active");
+}
+function showLogin() {
+    document.getElementById("formTitle").innerText = "Login";
+    document.getElementById("signupForm").classList.remove("active");
+    document.getElementById("loginForm").classList.add("active");
+}
+
+
+// CAPTCHA GENERATION
+
+let generatedCaptcha = "";
+
+function generateCaptcha() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let captcha = "";
+    for (let i = 0; i < 5; i++) {
+        captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    generatedCaptcha = captcha;
+    document.getElementById("captcha").innerText = captcha;
+}
+
+generateCaptcha(); // Load first captcha
+
+
+// SIGNUP API
+
+document.getElementById("signupForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    
+    const user = {
+        name: signupName.value,
+        email: signupEmail.value,
+        phone: signupPhone.value,
+        password: signupPassword.value
+    };
+
+    const res = await fetch("/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        alert("Signup Successful!");
+        showLogin();
+        generateCaptcha();
+    } else {
+        alert(data.message);
+    }
+});
+
+
+// LOGIN API + CAPTCHA CHECK
+
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    // CAPTCHA Check
+    if (captchaInput.value !== generatedCaptcha) {
+        alert("Incorrect CAPTCHA!");
+        generateCaptcha();
+        return;
+    }
+
+    const user = {
+        email: loginEmail.value,
+        password: loginPassword.value
+    };
+
+    const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        localStorage.setItem("loggedInUser", data.name);
+        alert("Login Successful!");
+        window.location.href = "index.html";
+    } else {
+        alert(data.message);
+        generateCaptcha();
+    }
+});
+</script>
+
+</body>
+</html>

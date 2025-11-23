@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Diabetes Care — Shop</title>
+
+  <style>
+    :root{
+      --accent:#2563eb;
+      --muted:#6b7280;
+      --card-bg:#ffffff;
+      --bg:#f3f4f6;
+      --success:#16a34a;
+      --danger:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, Arial, sans-serif;
+      background:var(--bg);
+      color:#111827;
+    }
+
+    .navbar{
+      background:linear-gradient(90deg,#14b8a6,#2563eb);
+      color:white;
+      padding:12px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:8px;background:#fff3;
+      display:flex;align-items:center;justify-content:center;font-weight:700;}
+    .search{padding:6px 10px;border-radius:8px;border:none;min-width:260px;}
+    .cart-btn{background:rgba(255,255,255,0.12);color:white;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;position:relative;}
+    .cart-badge{position:absolute;top:-6px;right:-6px;background:var(--danger);color:white;padding:2px 6px;border-radius:999px;font-size:12px;}
+
+    .container{max-width:1100px;margin:22px auto;padding:0 14px}
+    .grid{display:grid;grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));gap:14px;}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .select, .btn{padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb;background:white;}
+    .btn{background:var(--accent);color:white;border:none;cursor:pointer}
+
+    .card{background:var(--card-bg);border-radius:10px;padding:12px;
+      box-shadow:0 6px 18px rgba(16,24,40,0.06);display:flex;flex-direction:column;gap:8px;
+      transition:transform .12s ease;}
+    .card:hover{transform:translateY(-6px);}
+    .thumb{width:100%;height:140px;border-radius:8px;object-fit:cover;background:#f1f5f9}
+    .price{color:var(--danger);font-weight:700}
+    .card-actions{display:flex;gap:8px;margin-top:auto}
+    .small{padding:6px 8px;font-size:13px;border-radius:8px;border:1px solid #e5e7eb;background:white}
+    .add{background:var(--accent);color:white;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+
+    /* CART DRAWER */
+    .cart-drawer{
+      position:fixed;right:0;top:0;height:100vh;width:360px;background:white;
+      box-shadow:-10px 0 30px rgba(2,6,23,0.2);transform:translateX(110%);transition:transform .25s ease;
+      display:flex;flex-direction:column;z-index:80;}
+    .cart-drawer.open{transform:translateX(0)}
+    .cart-head,.cart-footer{padding:16px;border-bottom:1px solid #eee}
+    .cart-body{padding:16px;overflow:auto;flex:1}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed #eee}
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="logo">DB</div>
+      <div>
+        <h1 style="margin:0;font-size:18px">Medicare Pharmacy</h1>
+        <div style="font-size:12px;color:#fff9">Diabetes Care</div>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <input id="searchInput" class="search" placeholder="Search Diabetes Items..." />
+      <button class="cart-btn" id="openCartBtn">Cart <span id="cartCount" class="cart-badge">0</span></button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="container">
+    <div class="controls">
+      <h2>Diabetes Care — 20 Items</h2>
+      <select id="sortSelect" class="select">
+        <option value="relevance">Sort: Relevance</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+      </select>
+    </div>
+
+    <section class="grid" id="productsGrid"></section>
+  </main>
+
+  <!-- CART DRAWER -->
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-head">
+      <strong>Your Cart</strong>
+      <button id="closeCart" style="background:none;border:0;cursor:pointer">✕</button>
+    </div>
+    <div class="cart-body" id="cartBody"></div>
+    <div class="cart-footer">
+      <div style="display:flex;justify-content:space-between;font-weight:700">
+        <span>Total</span><span id="cartSubtotal">₹0.00</span>
+      </div>
+      <button class="btn" style="width:100%;margin-top:10px" id="bookNowBtn">Book Now</button>
+    </div>
+  </aside>
+
+<script>
+const products = [
+  {id:1,name:"Metformin",price:150,img:"https://via.placeholder.com/300x200?text=Metformin"},
+  {id:2,name:"Glucobay",price:200,img:"https://via.placeholder.com/300x200?text=Glucobay"},
+  {id:3,name:"Glimiprex",price:120,img:"https://via.placeholder.com/300x200?text=Glimiprex"},
+  {id:4,name:"Insulin Pen",price:450,img:"https://via.placeholder.com/300x200?text=Insulin+Pen"},
+  {id:5,name:"Sugar Test Strips",price:300,img:"https://via.placeholder.com/300x200?text=Strips"},
+  {id:6,name:"Dianorm",price:180,img:"https://via.placeholder.com/300x200?text=Dianorm"},
+  {id:7,name:"Glucometer",price:950,img:"https://via.placeholder.com/300x200?text=Glucometer"},
+  {id:8,name:"Pioglit 30",price:240,img:"https://via.placeholder.com/300x200?text=Pioglit+30"},
+  {id:9,name:"Glucobas",price:210,img:"https://via.placeholder.com/300x200?text=Glucobas"},
+  {id:10,name:"Victoza",price:670,img:"https://via.placeholder.com/300x200?text=Victoza"},
+  {id:11,name:"Sitagliptin",price:350,img:"https://via.placeholder.com/300x200?text=Sitagliptin"},
+  {id:12,name:"Jardiance",price:430,img:"https://via.placeholder.com/300x200?text=Jardiance"},
+  {id:13,name:"Ryzodeg",price:520,img:"https://via.placeholder.com/300x200?text=Ryzodeg"},
+  {id:14,name:"Humalog",price:660,img:"https://via.placeholder.com/300x200?text=Humalog"},
+  {id:15,name:"Amaryl",price:190,img:"https://via.placeholder.com/300x200?text=Amaryl"},
+  {id:16,name:"Glycomet GP2",price:140,img:"https://via.placeholder.com/300x200?text=Glycomet+GP2"},
+  {id:17,name:"Trajenta",price:450,img:"https://via.placeholder.com/300x200?text=Trajenta"},
+  {id:18,name:"Voglibose",price:230,img:"https://via.placeholder.com/300x200?text=Voglibose"},
+  {id:19,name:"Diabend",price:160,img:"https://via.placeholder.com/300x200?text=Diabend"},
+  {id:20,name:"Low Sugar Biscuits",price:120,img:"https://via.placeholder.com/300x200?text=LowSugar+Biscuits"},
+];
+
+let cart = JSON.parse(localStorage.getItem('diabCart')||'[]');
+
+function render(){
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML='';
+  products.forEach(p=>{
+    grid.innerHTML += `
+      <div class="card">
+        <img class="thumb" src="${p.img}">
+        <h4>${p.name}</h4>
+        <div class="price">₹${p.price}</div>
+        <div class="card-actions">
+          <button class="small" onclick="view(${p.id})">View</button>
+          <button class="add" onclick="add(${p.id})">Add to Cart</button>
+        </div>
+      </div>`;
+  });
+}
+function add(id){
+  const f = cart.find(i=>i.id===id);
+  f?f.qty++:cart.push({id,qty:1});
+  save(); updateCartUI();
+}
+function save(){ localStorage.setItem('diabCart', JSON.stringify(cart)); }
+
+function view(id){
+  const p = products.find(x=>x.id===id);
+  alert(p.name+" - ₹"+p.price);
+}
+
+function updateCartUI(){
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('cartCount').innerText = count;
+  const body = document.getElementById('cartBody');
+  body.innerHTML='';
+  let tot = 0;
+  cart.forEach(c=>{
+    const p = products.find(x=>x.id===c.id);
+    const t = p.price*c.qty; tot+=t;
+    body.innerHTML+=`
+      <div class="cart-item">
+        <img class="c-thumb" src="${p.img}">
+        <div style="flex:1">${p.name}<br>
+          <small>₹${p.price} × ${c.qty} = ₹${t}</small></div>
+        <button onclick="rem(${p.id})">❌</button>
+      </div>`;
+  });
+  document.getElementById('cartSubtotal').innerText = "₹"+tot;
+}
+function rem(id){ cart = cart.filter(i=>i.id!==id); save(); updateCartUI(); }
+
+document.getElementById('openCartBtn').onclick=()=>{document.getElementById('cartDrawer').classList.add('open');}
+document.getElementById('closeCart').onclick=()=>{document.getElementById('cartDrawer').classList.remove('open');}
+
+render(); updateCartUI();
+</script>
+
+</body>
+</html>
